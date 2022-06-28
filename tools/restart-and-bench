@@ -21,8 +21,8 @@ sudo truncate -s 0 -c /var/log/nginx/access.log
 sudo truncate -s 0 -c /var/log/mysql/slow.log
 
 # 設定のインポート
-sudo cp --no-preserve=ownership -r $WORKDIR/webapp/etc/nginx/* /etc/nginx
-sudo cp --no-preserve=ownership -r $WORKDIR/webapp/etc/mysql/* /etc/mysql
+sudo cp --no-preserve=ownership -r $WORKDIR/etc/nginx/* /etc/nginx
+sudo cp --no-preserve=ownership -r $WORKDIR/etc/mysql/* /etc/mysql
 
 # 各種サービスの再起動
 echo
