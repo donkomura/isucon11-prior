@@ -14,3 +14,7 @@ bin/webapp: ${SRC}
 .PHONY: run
 run: build
 	@./bin/webapp
+
+.PHONY: clean
+clean:
+	rm bin/webapp
