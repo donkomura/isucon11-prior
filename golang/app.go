@@ -78,26 +78,7 @@ func requiredStaffLogin(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func getReservations(r *http.Request, s *Schedule) error {
-	type UsersReservations struct {
-		User        `db:"user"`
-		Reservation `db:"reservation"`
-	}
-
-	sqlstr := `SELECT
-			u.id "user.id",
-			u.scheduler_id "user.scheduler_id",
-			u.user_id "user.user_id",
-			u.created_at "user.created_at",
-			r.id "reservation.id",
-			r.scheduler_id "reservation.scheduler_id",
-			r.user_id "reservation.user_id",
-			r.user "reservation.user",
-			r.created_at "reservation.created_at"
-		FROM
-			users as u JOIN reservations as r ON u.id = r.id
-		WHERE
-			scheduler_id = ?`
-	rows, err := db.QueryxContext(r.Context(), sqlstr, s.ID)
+	rows, err := db.QueryxContext(r.Context(), "SELECT * FROM `reservations` WHERE `schedule_id` = ?", s.ID)
 	if err != nil {
 		return err
 	}
@@ -105,16 +86,15 @@ func getReservations(r *http.Request, s *Schedule) error {
 	defer rows.Close()
 
 	reserved := 0
-	user_resevations = []*UserReservation{}
+	s.Reservations = []*Reservation{}
 	for rows.Next() {
-		ur := &UserReservation{}
-		r  := Reservation{}
-		if err := rows.StructScan(ur); err != nil {
+		reservation := &Reservation{}
+		if err := rows.StructScan(reservation); err != nil {
 			return err
 		}
-		r = ur.Reservation
-		r.User = ur.User
-		s.Reservations = append(s.Reservations, r)
+		reservation.User = getUser(r, reservation.UserID)
+
+		s.Reservations = append(s.Reservations, reservation)
 		reserved++
 	}
 	s.Reserved = reserved
