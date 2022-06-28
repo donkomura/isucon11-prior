@@ -98,6 +98,10 @@ func getReservations(r *http.Request, s *Schedule) error {
 		s.Reservations = append(s.Reservations, reservation)
 		reserved++
 	}
+	users := getUsers(r, userIds)
+	for _, rr := range s.Reservations {
+		rr.User = users[rr.UserID]
+	}
 	s.Reserved = reserved
 
 	return nil
