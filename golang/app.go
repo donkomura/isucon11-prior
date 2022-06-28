@@ -77,12 +77,12 @@ func requiredStaffLogin(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func getReservations(r *http.Request, s *Schedule) error {
-	type UsersReservations struct {
-		User        `db:"user"`
-		Reservation `db:"reservation"`
-	}
+type UserReservation struct {
+	User        `db:"user" json:"user"`
+	Reservation `db:"reservation" json:"reservation"`
+}
 
+func getReservations(r *http.Request, s *Schedule) error {
 	sqlstr := `SELECT
 			u.id "user.id",
 			u.scheduler_id "user.scheduler_id",
@@ -94,7 +94,7 @@ func getReservations(r *http.Request, s *Schedule) error {
 			r.user "reservation.user",
 			r.created_at "reservation.created_at"
 		FROM
-			users as u JOIN reservations as r ON u.id = r.id
+			users as u JOIN reservations as r ON u.id = r.user_id
 		WHERE
 			scheduler_id = ?`
 	rows, err := db.QueryxContext(r.Context(), sqlstr, s.ID)
@@ -105,16 +105,18 @@ func getReservations(r *http.Request, s *Schedule) error {
 	defer rows.Close()
 
 	reserved := 0
-	user_resevations = []*UserReservation{}
+	s.Reservations = []*Reservation{}
 	for rows.Next() {
 		ur := &UserReservation{}
-		r  := Reservation{}
 		if err := rows.StructScan(ur); err != nil {
 			return err
 		}
-		r = ur.Reservation
-		r.User = ur.User
-		s.Reservations = append(s.Reservations, r)
+		cur_usr := getCurrentUser(r)
+		if cur_usr != nil && !cur_usr.Staff {
+			ur.User.Email = ""
+		}
+		ur.Reservation.User = &ur.User
+		s.Reservations = append(s.Reservations, &ur.Reservation)
 		reserved++
 	}
 	s.Reserved = reserved
