@@ -41,7 +41,7 @@ echo ":: BENCHMARK        ====>"
 # mysql slow queries
 echo
 echo ":: MYSQL SLOW LOG   ====>"
-pt-query-digest /var/log/mysql/slow.log > /tmp/mysql-slow.log.${TIME}
+sudo pt-query-digest /var/log/mysql/slow.log > /tmp/mysql-slow.log.${TIME}
 
 # alp で解析
 echo
