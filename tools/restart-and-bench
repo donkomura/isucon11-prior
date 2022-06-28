@@ -1,10 +1,28 @@
 #!/bin/bash
 
 set -e
+TIME=$(date "+%Y%m%d_%H%M%S")
+WORKDIR=/home/isucon/webapp
 
-# nginx のログを削除
+# checkout master
+git fetch origin
+git reset --hard origin/master
+git pull origin master
+
+# build
+cd $WORKDIR/golang
+make clean
+make
+cd -
+
+# ログを削除
 echo ":: CLEAR LOGS       ====>"
 sudo truncate -s 0 -c /var/log/nginx/access.log
+sudo truncate -s 0 -c /var/log/mysql/slow.log
+
+# 設定のインポート
+sudo cp --no-preserve=ownership -r $WORKDIR/webapp/etc/nginx/* /etc/nginx
+sudo cp --no-preserve=ownership -r $WORKDIR/webapp/etc/mysql/* /etc/mysql
 
 # 各種サービスの再起動
 echo
@@ -19,6 +37,11 @@ sleep 5
 echo
 echo ":: BENCHMARK        ====>"
 /home/isucon/.x /home/isucon/bin/benchmarker
+
+# mysql slow queries
+echo
+echo ":: MYSQL SLOW LOG   ====>"
+pt-query-digest /var/log/mysql/slow.log > /tmp/mysql-slow.log.${TIME}
 
 # alp で解析
 echo
