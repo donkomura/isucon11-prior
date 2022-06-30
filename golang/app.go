@@ -107,7 +107,9 @@ func getReservations(r *http.Request, s *Schedule) error {
 	return nil
 }
 
-func getUsers(r *http.Request, ids []string) (users map[string]*User) {
+func getUsers(r *http.Request, ids []string) map[string]*User {
+	users := make(map[string]*User, 0)
+
 	sql, params, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", ids)
 	if err != nil {
 		return nil
@@ -130,7 +132,7 @@ func getUsers(r *http.Request, ids []string) (users map[string]*User) {
 		}
 		users[user.ID] = user
 	}
-	return
+	return users
 }
 func getReservationsCount(r *http.Request, s *Schedule) error {
 	rows, err := db.QueryxContext(r.Context(), "SELECT * FROM `reservations` WHERE `schedule_id` = ?", s.ID)
