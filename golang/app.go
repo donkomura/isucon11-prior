@@ -92,7 +92,6 @@ func getReservations(r *http.Request, s *Schedule) error {
 			r.id "reservation.id",
 			r.schedule_id "reservation.schedule_id",
 			r.user_id "reservation.user_id",
-			r.user "reservation.user",
 			r.created_at "reservation.created_at"
 		FROM
 			users as u JOIN reservations as r ON u.id = r.user_id
