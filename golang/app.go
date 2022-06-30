@@ -77,8 +77,27 @@ func requiredStaffLogin(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+type UserReservation struct {
+	User        `db:"user"`
+	Reservation `db:"reservation"`
+}
+
 func getReservations(r *http.Request, s *Schedule) error {
-	rows, err := db.QueryxContext(r.Context(), "SELECT * FROM `reservations` WHERE `schedule_id` = ?", s.ID)
+	sqlstr := `SELECT
+			u.id "user.id",
+			u.scheduler_id "user.scheduler_id",
+			u.user_id "user.user_id",
+			u.created_at "user.created_at",
+			r.id "reservation.id",
+			r.scheduler_id "reservation.scheduler_id",
+			r.user_id "reservation.user_id",
+			r.user "reservation.user",
+			r.created_at "reservation.created_at"
+		FROM
+			users as u JOIN reservations as r ON u.id = r.user_id
+		WHERE
+			scheduler_id = ?`
+	rows, err := db.QueryxContext(r.Context(), sqlstr, s.ID)
 	if err != nil {
 		return err
 	}
@@ -88,13 +107,16 @@ func getReservations(r *http.Request, s *Schedule) error {
 	reserved := 0
 	s.Reservations = []*Reservation{}
 	for rows.Next() {
-		reservation := &Reservation{}
-		if err := rows.StructScan(reservation); err != nil {
+		ur := &UserReservation{}
+		if err := rows.StructScan(ur); err != nil {
 			return err
 		}
-		reservation.User = getUser(r, reservation.UserID)
-
-		s.Reservations = append(s.Reservations, reservation)
+		cur_usr := getCurrentUser(r)
+		if cur_usr != nil && !cur_usr.Staff {
+			ur.User.Email = ""
+		}
+		ur.Reservation.User = &ur.User
+		s.Reservations = append(s.Reservations, &ur.Reservation)
 		reserved++
 	}
 	s.Reserved = reserved
@@ -117,17 +139,6 @@ func getReservationsCount(r *http.Request, s *Schedule) error {
 	s.Reserved = reserved
 
 	return nil
-}
-
-func getUser(r *http.Request, id string) *User {
-	user := &User{}
-	if err := db.QueryRowxContext(r.Context(), "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", id).StructScan(user); err != nil {
-		return nil
-	}
-	if getCurrentUser(r) != nil && !getCurrentUser(r).Staff {
-		user.Email = ""
-	}
-	return user
 }
 
 func parseForm(r *http.Request) error {
