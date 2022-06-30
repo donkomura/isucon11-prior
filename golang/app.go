@@ -85,8 +85,9 @@ type UserReservation struct {
 func getReservations(r *http.Request, s *Schedule) error {
 	sqlstr := `SELECT
 			u.id "user.id",
-			u.schedule_id "user.schedule_id",
-			u.user_id "user.user_id",
+			u.email "user.email",
+			u.nickname "user.nickname",
+			u.staff "user.staff",
 			u.created_at "user.created_at",
 			r.id "reservation.id",
 			r.schedule_id "reservation.schedule_id",
