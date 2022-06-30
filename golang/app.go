@@ -85,18 +85,18 @@ type UserReservation struct {
 func getReservations(r *http.Request, s *Schedule) error {
 	sqlstr := `SELECT
 			u.id "user.id",
-			u.scheduler_id "user.scheduler_id",
+			u.schedule_id "user.schedule_id",
 			u.user_id "user.user_id",
 			u.created_at "user.created_at",
 			r.id "reservation.id",
-			r.scheduler_id "reservation.scheduler_id",
+			r.schedule_id "reservation.schedule_id",
 			r.user_id "reservation.user_id",
 			r.user "reservation.user",
 			r.created_at "reservation.created_at"
 		FROM
 			users as u JOIN reservations as r ON u.id = r.user_id
 		WHERE
-			scheduler_id = ?`
+			schedule_id = ?`
 	rows, err := db.QueryxContext(r.Context(), sqlstr, s.ID)
 	if err != nil {
 		return err
