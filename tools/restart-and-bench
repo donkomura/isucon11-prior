@@ -28,7 +28,7 @@ sudo cp --no-preserve=ownership -r $WORKDIR/etc/mysql/* /etc/mysql
 echo
 echo ":: RESTART SERVICES ====>"
 sudo systemctl restart mysql
-sudo systemctl restart web-ruby
+sudo systemctl restart web-golang
 sudo systemctl restart nginx
 
 sleep 5
