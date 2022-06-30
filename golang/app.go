@@ -87,13 +87,12 @@ func getReservations(r *http.Request, s *Schedule) error {
 
 	reserved := 0
 	s.Reservations = []*Reservation{}
-	userIds := []string{}
 	for rows.Next() {
 		reservation := &Reservation{}
 		if err := rows.StructScan(reservation); err != nil {
 			return err
 		}
-		userIds = append(userIds, reservation.UserID)
+		reservation.User = getUser(r, reservation.UserID)
 
 		s.Reservations = append(s.Reservations, reservation)
 		reserved++
@@ -103,33 +102,6 @@ func getReservations(r *http.Request, s *Schedule) error {
 	return nil
 }
 
-func getUsers(r *http.Request, ids []string) map[string]*User {
-	users := make(map[string]*User, 0)
-
-	sql, params, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", ids)
-	if err != nil {
-		return nil
-	}
-	rows, err := db.QueryxContext(r.Context(), sql, params...)
-	if err != nil {
-		return nil
-	}
-
-	is_staff := getCurrentUser(r) != nil && !getCurrentUser(r).Staff
-
-	for rows.Next() {
-		user := &User{}
-		err = rows.StructScan(user)
-		if err != nil {
-			return nil
-		}
-		if !is_staff {
-			user.Email = ""
-		}
-		users[user.ID] = user
-	}
-	return users
-}
 func getReservationsCount(r *http.Request, s *Schedule) error {
 	rows, err := db.QueryxContext(r.Context(), "SELECT * FROM `reservations` WHERE `schedule_id` = ?", s.ID)
 	if err != nil {
@@ -145,6 +117,17 @@ func getReservationsCount(r *http.Request, s *Schedule) error {
 	s.Reserved = reserved
 
 	return nil
+}
+
+func getUser(r *http.Request, id string) *User {
+	user := &User{}
+	if err := db.QueryRowxContext(r.Context(), "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", id).StructScan(user); err != nil {
+		return nil
+	}
+	if getCurrentUser(r) != nil && !getCurrentUser(r).Staff {
+		user.Email = ""
+	}
+	return user
 }
 
 func parseForm(r *http.Request) error {
