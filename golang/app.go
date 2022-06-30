@@ -78,8 +78,8 @@ func requiredStaffLogin(w http.ResponseWriter, r *http.Request) bool {
 }
 
 type UserReservation struct {
-	User        `db:"user"`
-	Reservation `db:"reservation"`
+	User        `db:"user" json:"user"`
+	Reservation `db:"reservation" db:"reservation"`
 }
 
 func getReservations(r *http.Request, s *Schedule) error {
@@ -420,25 +420,37 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type ScheduleCount struct {
+	Schedule  `db:"schedule" json:"schedule"`
+	Count int `db:"count"`
+}
+
 func schedulesHandler(w http.ResponseWriter, r *http.Request) {
-	schedules := []*Schedule{}
-	rows, err := db.QueryxContext(r.Context(), "SELECT * FROM `schedules` ORDER BY `id` DESC")
+	sqlstr := `SELECT
+		s.id "schedule.id",
+		s.title "schedule.title",
+		s.capacity "schedule.capacity",
+		s.created_at "schedule.created_at",
+		COUNT(*)
+	FROM
+		schedules as s JOIN reservations as r ON s.id = r.schedule_id
+	GROUP BY
+		s.id`
+	rows, err := db.QueryxContext(r.Context(), sqlstr)
 	if err != nil {
 		sendErrorJSON(w, err, 500)
 		return
 	}
 
+	schedules := []*Schedule{}
 	for rows.Next() {
-		schedule := &Schedule{}
-		if err := rows.StructScan(schedule); err != nil {
+		sc := &ScheduleCount{}
+		if err := rows.StructScan(sc); err != nil {
 			sendErrorJSON(w, err, 500)
 			return
 		}
-		if err := getReservationsCount(r, schedule); err != nil {
-			sendErrorJSON(w, err, 500)
-			return
-		}
-		schedules = append(schedules, schedule)
+		sc.Schedule.Reserved = sc.Count
+		schedules = append(schedules, &sc.Schedule)
 	}
 
 	sendJSON(w, schedules, 200)
