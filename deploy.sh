@@ -69,7 +69,7 @@ $HOME/bin/benchmarker
 echo
 echo ":: ACCESS LOG        ====>"
 sudo cat /var/log/nginx/access.log | \
-	alp ltsv --sort avg -r > /tmp/nginx_access.log.${TIME}
+  alp ltsv --sort avg -r -o 'count,method,uri,min,max,sum,avg,p95,avg_body' -m '/api/schedules/[0-9a-z]+' > /tmp/nginx_access.log.${TIME}
 
 echo ":: SLOW QUERY DIGEST ====>"
 sudo pt-query-digest /var/log/mysql/slow.log > /tmp/mysql_slow.log.${TIME}
