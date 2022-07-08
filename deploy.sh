@@ -63,8 +63,8 @@ sudo systemctl restart web-golang
 
 echo
 echo ":: BENCHMARK         ====>"
-cd $WORKDIR
-$WORKDIR/bin/benchmarker
+cd $HOME
+$HOME/bin/benchmarker
 
 echo
 echo ":: ACCESS LOG        ====>"
