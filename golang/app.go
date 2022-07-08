@@ -360,13 +360,14 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 		userID := getCurrentUser(r).ID
 
 		schedule := &Schedule{}
-		if err := db.QueryRowxContext(r.Context(),
+		err := db.QueryRowxContext(r.Context(),
 			"SELECT * FROM `schedules` WHERE `id` = ? LIMIT 1 FOR UPDATE", scheduleID,
-		).StructScan(schedule); err != nil {
+		).StructScan(schedule)
+		if err != nil {
 			return sendErrorJSON(w, err, 500)
 		}
 		if schedule == nil {
-			return sendErrorJSON(w, nil, 500)
+			return sendErrorJSON(w, fmt.Errorf("schedule not found"), 500)
 		}
 
 		found := 0
@@ -387,7 +388,7 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 			return sendErrorJSON(w, fmt.Errorf("capacity is already full"), 403)
 		}
 
-		id := generateID(tx, "schedules")
+		id := generateID(tx, "reservations")
 		if _, err := tx.ExecContext(
 			ctx,
 			"INSERT INTO `reservations` (`id`, `schedule_id`, `user_id`, `created_at`) VALUES (?, ?, ?, NOW(6))",
