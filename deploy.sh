@@ -7,7 +7,7 @@ WORKDIR=/home/isucon/${SERVICE}
 LOGDIR=/home/isucon/logs/${TIME}
 BRANCH=${BRANCH:-$(git rev-parse --abbrev-ref HEAD)}
 
-echo -e "!!!!!!!!! RELOAD START !!!!!!!!!\nSTART=$TIME\nCOMMIT=$(git rev-parse --short HEAD)" \| notify_slack
+echo -e "!!!!!!!!! RELOAD START !!!!!!!!!\nSTART=$TIME\nCOMMIT=$(git rev-parse --short HEAD)" | notify_slack
 
 # checkout current branch
 git fetch origin
@@ -76,5 +76,5 @@ sudo pt-query-digest /var/log/mysql/slow.log > /tmp/mysql_slow.log.${TIME}
 echo "log time: $TIME"
 
 ENDTIME=$(date "+%Y%m%d_%H%M%S")
-echo -e "!!!!!!!!! RELOAD END AT $ENDTIME !!!!!!!!!\nLOGTIME=$TIME\nCOMMIT=$(git rev-parse --short HEAD)" \| notify_slack
+echo -e "!!!!!!!!! RELOAD END AT $ENDTIME !!!!!!!!!\nLOGTIME=$TIME\nCOMMIT=$(git rev-parse --short HEAD)" | notify_slack
 
