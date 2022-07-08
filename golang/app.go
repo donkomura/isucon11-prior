@@ -104,6 +104,7 @@ func getReservations(r *http.Request, s *Schedule) error {
 
 	defer rows.Close()
 
+	cur_usr := getCurrentUser(r)
 	reserved := 0
 	s.Reservations = []*Reservation{}
 	for rows.Next() {
@@ -111,7 +112,6 @@ func getReservations(r *http.Request, s *Schedule) error {
 		if err := rows.StructScan(ur); err != nil {
 			return err
 		}
-		cur_usr := getCurrentUser(r)
 		if cur_usr != nil && !cur_usr.Staff {
 			ur.User.Email = ""
 		}
