@@ -78,8 +78,8 @@ func requiredStaffLogin(w http.ResponseWriter, r *http.Request) bool {
 }
 
 type UserReservation struct {
-	User        `db:"user"`
-	Reservation `db:"reservation"`
+	User        `db:"user" json:"user"`
+	Reservation `db:"reservation" json:"reservation"`
 }
 
 func getReservations(r *http.Request, s *Schedule) error {
@@ -356,7 +356,6 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 
 	reservation := &Reservation{}
 	err := transaction(r.Context(), &sql.TxOptions{}, func(ctx context.Context, tx *sqlx.Tx) error {
-		id := generateID(tx, "schedules")
 		scheduleID := r.PostFormValue("schedule_id")
 		userID := getCurrentUser(r).ID
 
@@ -378,28 +377,39 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 			return sendErrorJSON(w, fmt.Errorf("already taken"), 403)
 		}
 
-		capacity := 0
-		if err := tx.QueryRowContext(ctx, "SELECT `capacity` FROM `schedules` WHERE `id` = ? LIMIT 1", scheduleID).Scan(&capacity); err != nil {
+		schedules := []*Schedule{}
+		rowsx, err := tx.QueryxContext(ctx, "SELECT * FROM `schedules` WHERE `id` = ? LIMIT 1", schedules)
+		if err != nil {
 			return sendErrorJSON(w, err, 500)
+		}
+		schedule := &Schedule{}
+		for rowsx.Next() {
+			if err := rowsx.StructScan(schedule); err != nil {
+				sendErrorJSON(w, err, 500)
+				return sendErrorJSON(w, err, 500)
+			}
+			if schedule == nil {
+				return sendErrorJSON(w, err, 500)
+			}
 		}
 
-		rows, err := tx.QueryContext(ctx, "SELECT * FROM `reservations` WHERE `schedule_id` = ?", scheduleID)
-		if err != nil && err != sql.ErrNoRows {
-			return sendErrorJSON(w, err, 500)
-		}
-		reserved := 0
-		for rows.Next() {
-			reserved++
-		}
+		capacity := schedule.Capacity
+		reserved := schedule.Reserved
 
 		if reserved >= capacity {
 			return sendErrorJSON(w, fmt.Errorf("capacity is already full"), 403)
 		}
 
+		id := generateID(tx, "schedules")
 		if _, err := tx.ExecContext(
 			ctx,
 			"INSERT INTO `reservations` (`id`, `schedule_id`, `user_id`, `created_at`) VALUES (?, ?, ?, NOW(6))",
 			id, scheduleID, userID,
+		); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx,
+			"UPDATE `schedulers` SET `reserved` = `reserved` + 1 WHERE id = ?", scheduleID,
 		); err != nil {
 			return err
 		}
