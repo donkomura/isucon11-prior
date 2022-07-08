@@ -366,7 +366,7 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return sendErrorJSON(w, err, 500)
 		}
-		if schedule == nil {
+		if (&Schedule{}) == schedule {
 			return sendErrorJSON(w, fmt.Errorf("schedule not found"), 500)
 		}
 
