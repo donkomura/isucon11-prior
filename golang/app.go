@@ -377,20 +377,15 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 			return sendErrorJSON(w, fmt.Errorf("already taken"), 403)
 		}
 
-		schedules := []*Schedule{}
-		rowsx, err := tx.QueryxContext(ctx, "SELECT * FROM `schedules` WHERE `id` = ? LIMIT 1", schedules)
-		if err != nil {
+		schedule := &Schedule{}
+		if err := db.QueryRowxContext(
+			r.Context(),
+			"SELECT * FROM `schedules` WHERE `id` = ? LIMIT 1", scheduleID,
+		).StructScan(schedule); err != nil {
 			return sendErrorJSON(w, err, 500)
 		}
-		schedule := &Schedule{}
-		for rowsx.Next() {
-			if err := rowsx.StructScan(schedule); err != nil {
-				sendErrorJSON(w, err, 500)
-				return sendErrorJSON(w, err, 500)
-			}
-			if schedule == nil {
-				return sendErrorJSON(w, err, 500)
-			}
+		if schedule == nil {
+			return sendErrorJSON(w, nil, 500)
 		}
 
 		capacity := schedule.Capacity
