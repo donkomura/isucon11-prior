@@ -388,7 +388,7 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 			return sendErrorJSON(w, fmt.Errorf("capacity is already full"), 403)
 		}
 
-		id := generateID(tx, "reservations")
+		id := generateID(tx, "schedules")
 		if _, err := tx.ExecContext(
 			ctx,
 			"INSERT INTO `reservations` (`id`, `schedule_id`, `user_id`, `created_at`) VALUES (?, ?, ?, NOW(6))",
@@ -397,7 +397,7 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx,
-			"UPDATE `schedulers` SET `reserved` = `reserved` + 1 WHERE id = ?", scheduleID,
+			"UPDATE `schedules` SET `reserved` = `reserved` + 1 WHERE id = ?", scheduleID,
 		); err != nil {
 			return err
 		}
