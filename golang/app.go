@@ -360,14 +360,13 @@ func createReservationHandler(w http.ResponseWriter, r *http.Request) {
 		userID := getCurrentUser(r).ID
 
 		schedule := &Schedule{}
-		err := db.QueryRowxContext(r.Context(),
+		if err := db.QueryRowxContext(r.Context(),
 			"SELECT * FROM `schedules` WHERE `id` = ? LIMIT 1 FOR UPDATE", scheduleID,
-		).StructScan(schedule)
-		if err != nil {
+		).StructScan(schedule); err != nil {
 			return sendErrorJSON(w, err, 500)
 		}
-		if (&Schedule{}) == schedule {
-			return sendErrorJSON(w, fmt.Errorf("schedule not found"), 500)
+		if schedule.ID == "" {
+			return sendErrorJSON(w, nil, 403)
 		}
 
 		found := 0
